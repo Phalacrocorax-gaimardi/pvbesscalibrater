@@ -178,7 +178,7 @@ get_boosted_tree_model <- function(pv_data_in, learning_rate=0.02, tree_depth=5,
 }
 
 
-#bst <- get_boosted_tree_model(transform_to_utils(feature_select(pv_survey_oo,recode_bills=T,drop_lowestbills = T),epsilon=0.7))
+#bst <- get_boosted_tree_model(transform_to_utils(feature_select(pv_survey_oo,recode_bills=F,drop_lowestbills = T),epsilon=0.7))
 
 #' get_shap_scores
 #'
@@ -211,23 +211,25 @@ get_shap_scores <- function(pv_data_in,bst){
   return(shap_scores_long1)
 }
 
-#shap_scores_long <- get_shap_scores(transform_to_utils(feature_select(pv_survey_oo,recode_bills=T,drop_lowestbills = T),epsilon=0.7),bst)
+#shap_scores_long <- get_shap_scores(transform_to_utils(feature_select(pv_survey_oo,recode_bills=F,drop_lowestbills = T),epsilon=0.7),bst)
 
 
 #' get_abm_calibration
 #'
 #' returns abm partial utilities for the selected features (q9_1 and qsp21) and barrier (theta) terms in ABM model for each agent. Results are expressed as mean
-#' partial utilities corresponding to each survey response and individual weights for each agent.
+#' partial utilities corresponding to each survey response and individual weights for each agent. A regularisation parameter can be
+#' used to ensure that model weights for financial and social variables are > 1, or some negative weights can be tolerated.
 #'
 #' @param shap_scores_long individual shap scores by feature (output from get_shap_scores)
 #' @param stat statistic - median (default) or mean
+#' @param regularisation regularisation 0=none, 1= full, > 1 over, < 1 under
 #'
 #'
 #' @return data frame giving partial utilities for abstracted model features and residual (theta) terms and individual weights
 #' @export
 #'
 #' @examples
-get_abm_calibration <- function(shap_scores_long, stat="median"){
+get_abm_calibration <- function(shap_scores_long, stat="mean",regularisation=1){
   #
   shap_scores <- shap_scores_long %>% dplyr::select(-question,-response)
   #q45 social
@@ -244,12 +246,22 @@ get_abm_calibration <- function(shap_scores_long, stat="median"){
 
   shap_scores_abm <- shap_scores_abm %>% dplyr::bind_rows(u_theta) %>% dplyr::arrange(ID)
   shap_scores_abm <- shap_scores_abm %>% dplyr::rename("du"=shap)
+  #regularise
+  #regularise
+  min_shap <- shap_scores_abm %>% filter(question_code != "theta") %>% group_by(question_code) %>% slice_min(du) %>% select(question_code,du) %>% rename("du_min"=du)
+  theta_shift <- min_shap %>% pull(du_min) %>% sum()
+  min_shap <- min_shap %>% bind_rows(tibble(question_code="theta",du_min = -theta_shift))
+
+  shap_scores_abm <- shap_scores_abm %>% inner_join(min_shap) %>% mutate(du=du-regularisation*du_min) %>% select(-du_min)
+
+
+
   if(stat=="mean") {shap_scores_mean <- shap_scores_abm %>% dplyr::group_by(question_code,response_code) %>% dplyr::summarise(du_average=mean(du))
-  shap_scores_abm <- shap_scores_abm %>% dplyr::inner_join(shap_scores_mean)
-  shap_scores_abm <- shap_scores_abm %>% dplyr::mutate(weight=du/du_average)}
+  shap_scores_abm <- shap_scores_abm %>% dplyr::inner_join(shap_scores_mean)}
   if(stat=="median") {shap_scores_median <- shap_scores_abm %>% dplyr::group_by(question_code,response_code) %>% dplyr::summarise(du_average=median(du))
-  shap_scores_abm <- shap_scores_abm %>% dplyr::inner_join(shap_scores_median)
-  shap_scores_abm <- shap_scores_abm %>% dplyr::mutate(weight=du/du_average)}
+  shap_scores_abm <- shap_scores_abm %>% dplyr::inner_join(shap_scores_median)}
+
+  shap_scores_abm <- shap_scores_abm %>% dplyr::mutate(weight=du/du_average)
   return(shap_scores_abm)
 }
 
@@ -262,14 +274,16 @@ get_abm_calibration <- function(shap_scores_long, stat="median"){
 #'
 #' @param shap_scores_long shaps scores (partial utilities)
 #' @param stat median (default) or mean
+#' @param regularisation 0 none, 1 full
 #'
 #' @return a dataframe with colums ID w_q9_1  w_qsp21 W_theta
 #' @export
 #'
 #' @examples
-get_model_weights <- function(shap_scores_long, stat="median"){
+get_model_weights <- function(shap_scores_long, stat="mean",regularisation = 1){
 
-  shap_scores_abm <- get_abm_calibration(shap_scores_long,stat)
+  shap_scores_abm <- get_abm_calibration(shap_scores_long,stat, regularisation)
+
   weights_abm <- shap_scores_abm %>% tidyr::pivot_wider(id_cols=c(-du,-response_code,-du_average),values_from=weight,names_from=question_code)
   names(weights_abm)[2:ncol(weights_abm)] <- paste("w_",names(weights_abm)[2:ncol(weights_abm)],sep="")
   return(weights_abm)
@@ -283,14 +297,15 @@ get_model_weights <- function(shap_scores_long, stat="median"){
 #'
 #' @param shap_scores_long shap scores (partial utilities)
 #' @param stat median (default) or mean
+#' @param regularisation none 0, full 1, over > 1
 #'
 #' @return dataframe
 #' @export
 #'
 #' @examples
-get_empirical_partial_utilities <- function(shap_scores_long,stat="median"){
+get_empirical_partial_utilities <- function(shap_scores_long,stat="median", regularisation=1){
 
-  shap_scores_abm <- get_abm_calibration(shap_scores_long,stat)
+  shap_scores_abm <- get_abm_calibration(shap_scores_long,stat,regularisation=1)
   if(stat=="mean") partial_utils <- shap_scores_abm %>% dplyr::group_by(question_code,response_code) %>% dplyr::summarise(du_average=mean(du))
   if(stat=="median") partial_utils <- shap_scores_abm %>% dplyr::group_by(question_code,response_code) %>% dplyr::summarise(du_average=median(du))
   return(partial_utils)

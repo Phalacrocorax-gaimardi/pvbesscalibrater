@@ -4,12 +4,18 @@
 \alias{get_empirical_partial_utilities}
 \title{get_empirical_partial_utilities}
 \usage{
-get_empirical_partial_utilities(shap_scores_long, stat = "median")
+get_empirical_partial_utilities(
+  shap_scores_long,
+  stat = "median",
+  regularisation = 1
+)
 }
 \arguments{
 \item{shap_scores_long}{shap scores (partial utilities)}
 
 \item{stat}{median (default) or mean}
+
+\item{regularisation}{none 0, full 1, over > 1}
 }
 \value{
 dataframe

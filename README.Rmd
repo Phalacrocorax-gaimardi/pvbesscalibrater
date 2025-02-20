@@ -18,7 +18,9 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of pvbesscalibrater is to create a set of weights and empirical partial utilities used by pvbessmicrosimr. This is the micro-calibration step of the ABM. Some of the tasks that pvbesscalibrater handles include
+The goal of pvbesscalibrater is to create a set of weights and empirical partial utilities used by pvbessmicrosimr. This is the micro-calibration step of the ABM. 
+
+Tasks that pvbesscalibrater handles include
 
 * mapping survey adoption likert scores to partial utilities using a parameter (epsilon) that describes hypothetical bias
 * choice of financial variable(s) in ABM (usually highest bill q14, annual bill q_ab or highest and lowest bills q14 and q15)
@@ -33,22 +35,44 @@ You can install the development version of pvbesscalibrater like so:
 remotes::install_github(")
 ```
 
-## Workflow
-
-This explains the workflow.
-
 ```{r example}
 library(pvbesscalibrater)
+library(tidyverse)
 ## basic example code
 ```
 
-What is special about using `README.Rmd` instead of just `README.md`? You can include R chunks like so:
+## Workflow
 
-```{r cars}
-summary(cars)
+
+
+### Preliminary
+
+pvbessmicrosimr has two datasets included: pv_survey and pv_survey_oo (restricted to owner-occupiers only)
+
+An initial feature selection choosing q14 (highest 2023 bill) as financial variable
+```{r}
+pv_data <- feature_select(pv_survey_oo,recode_bills=F,drop_lowestbills = T)
 ```
+Transform to adoption utilities (u) instead of LTA likert scores. This involves choice of a parameter $\epsilon$ that controls the mapping between stated LTA and utility. $\epsilon=1$ means no hypothetical bias. $\epsilon=0.7$ is a reasonable choice. 
+An initial feature selection choosing q14 (highest 2023 bill) as financial variable
+```{r}
+pv_data <- transform_to_utils(pv_data,epsilon=0.7)
 
-You'll still need to render `README.Rmd` regularly, to keep `README.md` up-to-date. `devtools::build_readme()` is handy for this.
+### 
+
+```
+Create boosted tree object using 5-fold cross validation
+```{r results="hide"}
+bst <- get_boosted_tree_model(pv_data)
+```
+Extract shap scores for individual agents and features from bst
+```{r}
+shap_scores_long <- get_shap_scores(pv_data,bst)
+
+```
+Find the empirical partial utilities for q14 and 
+
+
 
 You can also embed plots, for example:
 

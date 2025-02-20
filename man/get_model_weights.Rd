@@ -4,12 +4,14 @@
 \alias{get_model_weights}
 \title{get_model_weights}
 \usage{
-get_model_weights(shap_scores_long, stat = "median")
+get_model_weights(shap_scores_long, stat = "mean", regularisation = 1)
 }
 \arguments{
 \item{shap_scores_long}{shaps scores (partial utilities)}
 
 \item{stat}{median (default) or mean}
+
+\item{regularisation}{0 none, 1 full}
 }
 \value{
 a dataframe with colums ID w_q9_1  w_qsp21 W_theta

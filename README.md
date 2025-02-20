@@ -8,7 +8,9 @@
 
 The goal of pvbesscalibrater is to create a set of weights and empirical
 partial utilities used by pvbessmicrosimr. This is the micro-calibration
-step of the ABM. Some of the tasks that pvbesscalibrater handles include
+step of the ABM.
+
+Tasks that pvbesscalibrater handles include
 
 - mapping survey adoption likert scores to partial utilities using a
   parameter (epsilon) that describes hypothetical bias
@@ -25,31 +27,62 @@ You can install the development version of pvbesscalibrater like so:
 remotes::install_github(")
 ```
 
-## Example
-
-This explains the workflow.
-
 ``` r
 library(pvbesscalibrater)
+library(tidyverse)
+#> ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+#> ✔ dplyr     1.1.4     ✔ readr     2.1.5
+#> ✔ forcats   1.0.0     ✔ stringr   1.5.1
+#> ✔ ggplot2   3.5.1     ✔ tibble    3.2.1
+#> ✔ lubridate 1.9.3     ✔ tidyr     1.3.1
+#> ✔ purrr     1.0.2     
+#> ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+#> ✖ dplyr::filter() masks stats::filter()
+#> ✖ dplyr::lag()    masks stats::lag()
+#> ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
 ## basic example code
 ```
 
-What is special about using `README.Rmd` instead of just `README.md`?
-You can include R chunks like so:
+## Workflow
+
+\###Preliminary
+
+pvbessmicrosimr has two datasets included: pv_survey and pv_survey_oo
+(restricted to owner-occupiers only)
+
+An initial feature selection choosing q14 (highest 2023 bill) as
+financial variable
 
 ``` r
-summary(cars)
-#>      speed           dist       
-#>  Min.   : 4.0   Min.   :  2.00  
-#>  1st Qu.:12.0   1st Qu.: 26.00  
-#>  Median :15.0   Median : 36.00  
-#>  Mean   :15.4   Mean   : 42.98  
-#>  3rd Qu.:19.0   3rd Qu.: 56.00  
-#>  Max.   :25.0   Max.   :120.00
+pv_data <- feature_select(pv_survey_oo,recode_bills=F,drop_lowestbills = T)
 ```
 
-You’ll still need to render `README.Rmd` regularly, to keep `README.md`
-up-to-date. `devtools::build_readme()` is handy for this.
+Transform to adoption utilities (u) instead of LTA likert scores. This
+involves choice of a parameter $\epsilon$ that controls the mapping
+between stated LTA and utility. $\epsilon=1$ means no hypothetical bias.
+$\epsilon=0.7$ is a reasonable choice. An initial feature selection
+choosing q14 (highest 2023 bill) as financial variable
+
+``` r
+pv_data <- transform_to_utils(pv_data,epsilon=0.7)
+```
+
+Create boosted tree object using 5-fold cross validation
+
+``` r
+bst <- get_boosted_tree_model(pv_data)
+#> Warning in xgb.get.DMatrix(data, label, missing, weight, nthread =
+#> merged$nthread): xgboost: label will be ignored.
+```
+
+Extract shap scores for individual agents and features from bst
+
+``` r
+shap_scores_long <- get_shap_scores(pv_data,bst)
+#> Joining with `by = join_by(ID, question_code)`
+```
+
+Find the empirical partial utilities for q14 and
 
 You can also embed plots, for example:
 
