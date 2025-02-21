@@ -107,7 +107,7 @@ find_optimum_rounds_from_crossvalidation <- function(pv_data_in, learning_rate=0
 
   #pv_data1 <- pv_data %>% dplyr::select(-ID)
   #pv.train <- xgboost::xgb.DMatrix(as.matrix(pv_util[,-dim(pv_util)[2]]),label=as.vector(pv_util$u), missing=NA)
-  pv_train <- xgboost::xgb.DMatrix(as.matrix(pv_data_in %>% dplyr::select(-u)),label=as.vector(pv_data_in$u), missing=NA)
+  pv_train <- suppressWarnings(xgboost::xgb.DMatrix(as.matrix(pv_data_in %>% dplyr::select(-u)),label=as.vector(pv_data_in$u), missing=NA))
 
   #if(!train_on_utilities) #train on Likert scores
   # pv.train <- xgboost::xgb.DMatrix(as.matrix(pv_data1[,-dim(pv_data1)[2]]),label=as.vector(pv_data1$qsp22_7-1), missing=NA)
@@ -173,7 +173,7 @@ get_boosted_tree_model <- function(pv_data_in, learning_rate=0.02, tree_depth=5,
                     #eval_metric = "mlogloss"
   )
   n_opt <- find_optimum_rounds_from_crossvalidation(pv_data_in,learning_rate,tree_depth,k_crossvalidation)
-  bst <- xgboost::xgboost(data=pv_train,params=paramlist,pv_train,nrounds=complexity_factor*n_opt)
+  bst <- suppressWarnings(xgboost::xgboost(data=pv_train,params=paramlist,pv_train,nrounds=complexity_factor*n_opt))
   return(bst)
 }
 
