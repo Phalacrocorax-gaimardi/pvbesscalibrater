@@ -32,7 +32,7 @@ Tasks handled by *pvbesscalibrater* include:
 
 Install the latest development version of *pvbesscalibrater*:
 
-```{r message=FALSE}
+```{r message=FALSE,warning=FALSE }
 remotes::install_github("Phalacrocorax-gaimardi/pvbesscalibrater")
 ```
 Load packages

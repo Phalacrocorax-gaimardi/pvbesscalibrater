@@ -47,9 +47,9 @@ remotes::install_github("Phalacrocorax-gaimardi/pvbesscalibrater")
 #> package 'data.table' successfully unpacked and MD5 sums checked
 #> 
 #> The downloaded binary packages are in
-#>  C:\Users\Joe\AppData\Local\Temp\Rtmpik1hQ5\downloaded_packages
+#>  C:\Users\Joe\AppData\Local\Temp\Rtmp8ElG9M\downloaded_packages
 #> ── R CMD build ─────────────────────────────────────────────────────────────────
-#>          checking for file 'C:\Users\Joe\AppData\Local\Temp\Rtmpik1hQ5\remotes5d504fdd4c94\Phalacrocorax-gaimardi-pvbesscalibrater-f4343c0/DESCRIPTION' ...  ✔  checking for file 'C:\Users\Joe\AppData\Local\Temp\Rtmpik1hQ5\remotes5d504fdd4c94\Phalacrocorax-gaimardi-pvbesscalibrater-f4343c0/DESCRIPTION'
+#>          checking for file 'C:\Users\Joe\AppData\Local\Temp\Rtmp8ElG9M\remotes7c3c63e1742a\Phalacrocorax-gaimardi-pvbesscalibrater-997f3c8/DESCRIPTION' ...  ✔  checking for file 'C:\Users\Joe\AppData\Local\Temp\Rtmp8ElG9M\remotes7c3c63e1742a\Phalacrocorax-gaimardi-pvbesscalibrater-997f3c8/DESCRIPTION'
 #>       ─  preparing 'pvbesscalibrater':
 #>    checking DESCRIPTION meta-information ...     checking DESCRIPTION meta-information ...   ✔  checking DESCRIPTION meta-information
 #>       ─  checking for LF line-endings in source and make files and shell scripts
@@ -131,8 +131,6 @@ features present in *pv_data* using *xgboost*. A boosted tree object
 
 ``` r
 bst <- get_boosted_tree_model(pv_data)
-#> Warning in xgb.get.DMatrix(data, label, missing, weight, nthread =
-#> merged$nthread): xgboost: label will be ignored.
 ```
 
 SHAP scores are extracted for each agent and feature from *bst*.
