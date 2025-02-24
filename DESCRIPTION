@@ -16,7 +16,4 @@ Imports:
     dplyr,
     tidyr,
     tibble,
-    ggplot2,
     magrittr,
-    psych,
-    stringr

@@ -248,11 +248,11 @@ get_abm_calibration <- function(shap_scores_long, stat="mean",regularisation=1){
   shap_scores_abm <- shap_scores_abm %>% dplyr::rename("du"=shap)
   #regularise
   #regularise
-  min_shap <- shap_scores_abm %>% filter(question_code != "theta") %>% group_by(question_code) %>% slice_min(du) %>% select(question_code,du) %>% rename("du_min"=du)
-  theta_shift <- min_shap %>% pull(du_min) %>% sum()
-  min_shap <- min_shap %>% bind_rows(tibble(question_code="theta",du_min = -theta_shift))
+  min_shap <- shap_scores_abm %>% dplyr::filter(question_code != "theta") %>% dplyr::group_by(question_code) %>% dplyr::slice_min(du) %>% dplyr::select(question_code,du) %>% dplyr::rename("du_min"=du)
+  theta_shift <- min_shap %>% dplyr::pull(du_min) %>% sum()
+  min_shap <- min_shap %>% dplyr::bind_rows(tibble(question_code="theta",du_min = -theta_shift))
 
-  shap_scores_abm <- shap_scores_abm %>% inner_join(min_shap) %>% mutate(du=du-regularisation*du_min) %>% select(-du_min)
+  shap_scores_abm <- shap_scores_abm %>% dplyr::inner_join(min_shap) %>% dplyr::mutate(du=du-regularisation*du_min) %>% dplyr::select(-du_min)
 
 
 
